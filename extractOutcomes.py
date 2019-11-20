@@ -3,8 +3,12 @@ import os
 import pickle
 import hashlib
 import json
+import sys
 
-sLastSessionFilename = "lastSession.pickle"
+if len(sys.argv) > 0:
+    sLastSessionFilename = sys.argv[1]
+else:    
+    sLastSessionFilename = "lastSession.pickle"
 sOutputFile = "out.csv"
 # Base dir
 sBaseDir="events_out"
@@ -13,6 +17,9 @@ sBaseDir="events_out"
 dEventSizes= {}
 # For every file in dir
 aAllFiles = os.listdir(sBaseDir);
+# Sort filenames using Python to make sure they're the same order in all OSes
+aAllFiles.sort()
+
 print("+++ Found %d event files" % (len(aAllFiles)))
 for sFile in aAllFiles:
     with open(sBaseDir + "/" + sFile, "rb") as fCur:
@@ -31,22 +38,18 @@ if os.path.isfile(sLastSessionFilename):
 
             with open(sOutputFile, "wt") as fOutFile:
                 # Add header
-                print("userId,eventId,singleEventDescribed,numOfIrrelevantArticles,totalArticles,titleRepresentativeness"
+                print("userId,eventId,singleEventDescribed,listOfIrrelevantArticles,totalArticles,titleRepresentativeness"
                       , file=fOutFile
                       )
                 # for each line
                 for tTuple in aLastSession:
                     # Get fields
-                    (sUsername, sId, sTitle, sSingleEvent, iIrrelevants, sTitleRepresentsWell) = tTuple
-                    print(iIrrelevants)
-                    iIrrelevants.sort()
-                    sIrrelevants = ",".join([str(irr) for irr in iIrrelevants])
-                    print(sIrrelevants)
+                    (sUsername, sId, sTitle, sSingleEvent, lIrrelevant, sTitleRepresentsWell) = tTuple
                     aOptions = ['B', 'O', 'W']
                     # Get numeric quality indication from categorical
                     iTitleRepresentsWell = aOptions.index(str(sTitleRepresentsWell).upper())
                     # Output to file
-                    print("%s,%s, %s, \"%s\", %d, %d"%(str(hashlib.md5(sUsername.encode('utf8')).hexdigest()), sId, sSingleEvent, sIrrelevants, dEventSizes[sId], iTitleRepresentsWell)
+                    print("%s,%s, %s, \"%s\", %d, %d"%(str(hashlib.md5(sUsername.encode('utf8')).hexdigest()), sId, sSingleEvent, str(lIrrelevant), dEventSizes[sId], iTitleRepresentsWell)
                           , file=fOutFile
                           )
     except Exception as e:
